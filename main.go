@@ -19,13 +19,23 @@ func main() {
 
 	entry := widget.NewEntry()
 
+	entry.Resize(fyne.NewSize(300, 600))
+
 	button := widget.NewButton("Hello", func() {
 		fmt.Println("Hello", entry.Text)
 	})
 
-	split := container.NewHSplit(button, entry)
+	sendContent := container.NewHBox(entry, button)
 
-	window.SetContent(split)
+	sendContent.Resize(fyne.NewSize(300, 600))
+
+	content := container.NewVBox(sendContent)
+
+	border := container.NewBorder(container.NewVBox(content, widget.NewSeparator()), nil, nil, nil)
+
+	border.Resize(fyne.NewSize(640, 200))
+
+	window.SetContent(border)
 
 	window.Resize(fyne.NewSize(640, 460))
 	window.ShowAndRun()
