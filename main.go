@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -17,26 +20,39 @@ func main() {
 
 	window.SetMaster()
 
-	entry := widget.NewEntry()
+	entry := &widget.Entry{}
 
-	entry.Resize(fyne.NewSize(300, 600))
+	button := widget.NewButton("Enter", func() {
+		fmt.Println("Click!")
 
-	button := widget.NewButton("Hello", func() {
-		fmt.Println("Hello", entry.Text)
+		client := &http.Client{}
+
+		req, err := http.NewRequest("GET", "https://google.com/search?q=teste", nil)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		resp, err := client.Do(req)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		body, err := io.ReadAll(resp.Body)
+		fmt.Println(string(body))
+
 	})
 
-	sendContent := container.NewHBox(entry, button)
+	button.Resize(fyne.NewSize(20, 30))
 
-	sendContent.Resize(fyne.NewSize(300, 600))
+	header := container.NewGridWithColumns(3, layout.NewSpacer(), entry, container.NewHBox(button))
 
-	content := container.NewVBox(sendContent)
-
-	border := container.NewBorder(container.NewVBox(content, widget.NewSeparator()), nil, nil, nil)
-
-	border.Resize(fyne.NewSize(640, 200))
+	border := container.NewBorder(header, nil, nil, nil)
 
 	window.SetContent(border)
 
-	window.Resize(fyne.NewSize(640, 460))
+	window.Resize(fyne.NewSize(600, 600))
+
 	window.ShowAndRun()
 }
