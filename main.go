@@ -2,13 +2,15 @@ package main
 
 import (
 	"fmt"
+	"image/color"
 	"io"
 	"net/http"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -20,14 +22,31 @@ func main() {
 
 	window.SetMaster()
 
-	entry := &widget.Entry{}
+	url := &widget.Entry{}
+	// TODO -> This needs to be text editor,
+	// FIX -> Text grid doesn't works like a input, and the documentation
+	// sucks
+	body := widget.NewTextGrid()
 
+	body.CreateRenderer()
+
+	body.ShowLineNumbers = true
+
+	responseUi := canvas.NewText("Response", color.Black)
+
+	responseUi.Alignment = fyne.TextAlignCenter
+
+	httpMethod := &widget.Select{Options: []string{"GET", "POST", "PUT"}}
+
+	body.SetText("Test")
 	button := widget.NewButton("Enter", func() {
 		fmt.Println("Click!")
 
 		client := &http.Client{}
 
-		req, err := http.NewRequest("GET", "https://google.com/search?q=teste", nil)
+		reader := strings.NewReader(body.Text())
+
+		req, err := http.NewRequest(httpMethod.Selected, url.Text, reader)
 
 		if err != nil {
 			fmt.Println(err)
@@ -40,19 +59,19 @@ func main() {
 		}
 
 		body, err := io.ReadAll(resp.Body)
-		fmt.Println(string(body))
 
+		responseUi.Text = string(body)
 	})
 
 	button.Resize(fyne.NewSize(20, 30))
 
-	header := container.NewGridWithColumns(3, layout.NewSpacer(), entry, container.NewHBox(button))
+	header := container.NewGridWithColumns(3, httpMethod, url, container.NewHBox(button))
 
-	border := container.NewBorder(header, nil, nil, nil)
+	border := container.NewBorder(header, nil, nil, nil, container.NewHSplit(body, responseUi))
 
 	window.SetContent(border)
 
-	window.Resize(fyne.NewSize(600, 600))
+	window.Resize(fyne.NewSize(1000, 600))
 
 	window.ShowAndRun()
 }
