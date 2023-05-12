@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -13,6 +14,8 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 )
+
+const tempDir = "./tmp/body.json"
 
 func main() {
 
@@ -30,7 +33,33 @@ func main() {
 	body := widget.NewMultiLineEntry()
 
 	responseUi := widget.NewLabel("Response")
+	// FIX -> if there's no file it panics
+	bodyData, err := os.OpenFile(tempDir, os.O_RDWR, 0666)
+	stats, err := os.Stat(tempDir)
 
+	defer bodyData.Close()
+
+	data := make([]byte, stats.Size())
+
+	_, err = bodyData.Read(data)
+	if err != nil {
+		panic(err)
+	}
+
+	body.SetText(string(data))
+
+	body.OnChanged = func(text string) {
+
+		bodyData.Truncate(1)
+		bodyData.Seek(1, 0)
+
+		_, err = bodyData.Write([]byte(text))
+
+		if err != nil {
+			panic(err)
+		}
+
+	}
 	httpMethod := &widget.Select{Options: []string{"GET", "POST", "PUT"}}
 
 	button := widget.NewButton("Enter", func() {
@@ -72,4 +101,5 @@ func main() {
 	window.Resize(fyne.NewSize(1000, 600))
 
 	window.ShowAndRun()
+
 }
