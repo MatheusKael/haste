@@ -12,6 +12,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -23,6 +24,7 @@ func main() {
 
 	window := app.NewWindow("Haste")
 
+	shortcuts(&window)
 	window.SetMaster()
 
 	url := &widget.Entry{}
@@ -33,8 +35,8 @@ func main() {
 	body := widget.NewMultiLineEntry()
 
 	responseUi := widget.NewLabel("Response")
-	// FIX -> if there's no file it panics
-	bodyData, err := os.OpenFile(tempDir, os.O_RDWR, 0666)
+	bodyData, err := os.OpenFile(tempDir, os.O_RDWR|os.O_CREATE, 0666)
+
 	stats, err := os.Stat(tempDir)
 
 	defer bodyData.Close()
@@ -101,5 +103,17 @@ func main() {
 	window.Resize(fyne.NewSize(1000, 600))
 
 	window.ShowAndRun()
+
+}
+
+func shortcuts(window *fyne.Window) {
+
+	w := *window
+
+	ctrlW := &desktop.CustomShortcut{KeyName: fyne.KeyW, Modifier: fyne.KeyModifierControl}
+
+	w.Canvas().AddShortcut(ctrlW, func(shortcut fyne.Shortcut) {
+		w.Close()
+	})
 
 }
