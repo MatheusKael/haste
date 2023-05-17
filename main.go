@@ -117,6 +117,7 @@ func main() {
 
 		jsonTmpData.Data[0].Body = conver
 
+		// FIX ->  jsonTmpData needs to be written into cacheData not conver
 		_, err = cacheData.Write([]byte(string(conver)))
 
 		if err != nil {
