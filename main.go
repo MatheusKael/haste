@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -14,9 +13,8 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
+	"github.com/haste/cache"
 )
-
-const tempDir = "./tmp/body.json"
 
 type Data struct {
 	URL  string `json:"Url"`
@@ -34,33 +32,23 @@ func main() {
 
 	url := &widget.Entry{}
 	// TODO -> This needs to be text editor; I'll have to make my own
-	// text/code editor
+	// text/code editor, or find a library that does it.
 	// TODO -> Cache the body, url and method text
 
 	body := widget.NewMultiLineEntry()
 
 	responseUi := widget.NewLabel("Response")
-	cacheData, err := os.OpenFile(tempDir, os.O_RDWR|os.O_CREATE, 0666)
 
-	stats, err := os.Stat(tempDir)
+	jsonTmpData := cache.ReadCacheData()
 
-	defer cacheData.Close()
-
-	data := make([]byte, stats.Size())
-
-	_, err = cacheData.Read(data)
-	var jsonTmpData struct {
-		Data []Data `json:"Data"`
-	}
-
-	err = json.Unmarshal(data, &jsonTmpData)
-	if err != nil {
-		panic(err)
-	}
-
-	bodyData, err := json.Marshal(jsonTmpData.Data[0].Body)
+	bodyData, err := json.MarshalIndent(jsonTmpData, "", " ")
 	body.SetText(string(bodyData))
+
 	httpMethod := &widget.Select{Options: []string{"GET", "POST", "PUT"}}
+
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	button := widget.NewButton("Enter", func() {
 		fmt.Println("Click!")
@@ -105,31 +93,10 @@ func main() {
 	window.Resize(fyne.NewSize(1000, 600))
 
 	window.SetOnClosed(func() {
-
-		cacheData, err := os.OpenFile(tempDir, os.O_RDWR|os.O_CREATE, 0666)
-
-		cacheData.Truncate(0)
-		cacheData.Seek(0, 0)
-
-		defer cacheData.Close()
-
-		conver, err := json.Marshal(body.Text)
-
-		jsonTmpData.Data[0].Body = conver
-
-		// FIX ->  jsonTmpData needs to be written into cacheData not conver
-		_, err = cacheData.Write([]byte(string(conver)))
-
-		if err != nil {
-			panic(err)
-		}
-
+		cache.WriteToCache(body.Text)
 	})
-
 	window.ShowAndRun()
-
 }
-
 func shortcuts(window *fyne.Window) {
 
 	w := *window
