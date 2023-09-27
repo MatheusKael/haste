@@ -14,11 +14,14 @@ import (
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
 	"github.com/haste/cache"
+	"github.com/haste/database"
 )
 
 func Build() {
 
 	app := app.New()
+
+	db, err := database.ConnectAndCreateTable()
 
 	window := app.NewWindow("Haste")
 
@@ -28,7 +31,6 @@ func Build() {
 	url := &widget.Entry{}
 	// TODO -> This needs to be text editor; I'll have to make my own
 	// text/code editor, or find a library that does it.
-	// TODO -> Cache the body, url and method text
 
 	body := widget.NewMultiLineEntry()
 
@@ -36,15 +38,34 @@ func Build() {
 
 	jsonTmpData := cache.ReadCacheData()
 
+	rows, err := database.ReadData(db)
+
+	for rows.Next() {
+		var id int
+		var url string
+		var body string
+		var method string
+		var body_format string
+		var created_at string
+		var updated_at string
+
+		err = rows.Scan(&id, &url, &body, &method, &body_format, &created_at, &updated_at)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		fmt.Println(id, url, body, method, body_format, created_at, updated_at)
+	}
+
 	bodyData, err := json.MarshalIndent(jsonTmpData, "", " ")
 	body.SetText(string(bodyData))
 
 	if err != nil {
-			fmt.Println(err)
+		fmt.Println(err)
 	}
 
 	httpMethod := &widget.Select{Options: []string{"GET", "POST", "PUT"}}
-
 
 	button := widget.NewButton("Enter", func() {
 		fmt.Println("Click!")
@@ -89,7 +110,11 @@ func Build() {
 	window.Resize(fyne.NewSize(1000, 600))
 
 	window.SetOnClosed(func() {
-		cache.WriteToCache(body.Text)
+		//cache.WriteToCache(body.Text)
+
+		data := &database.RequestData{Body_format: "JSON", Body: body.Text, Method: httpMethod.Selected, Url: url.Text}
+
+		database.InsertData(data, db)
 	})
 	window.ShowAndRun()
 }
