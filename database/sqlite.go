@@ -24,9 +24,7 @@ func ConnectAndCreateTable() (*sql.DB, error) {
 		return nil, err
 	}
 
-	res, err := db.Exec("CREATE TABLE IF NOT EXISTS  user_request (id INTEGER PRIMARY KEY, url TEXT, method TEXT, body TEXT, body_format TEXT, created_at DATETIME, updated_at DATETIME)")
-
-	fmt.Println(res)
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS user_request (id INTEGER PRIMARY KEY, url TEXT, method TEXT, body TEXT, body_format TEXT, created_at DATETIME, updated_at DATETIME)")
 
 	return db, err
 }
@@ -52,4 +50,17 @@ func ReadData(db *sql.DB) (*sql.Rows, error) {
 	}
 
 	return rows, nil
+}
+
+func UpdateData(id int, data *RequestData, db *sql.DB) (sql.Result, error) {
+	// TODO -> Just updating the first row, I need to update the row with the id passed as parameter.
+	result, err := db.Exec("UPDATE user_request SET url = ?, method = ?, body = ?, updated_at = datetime('now') WHERE id = 1", &data.Url, &data.Method, &data.Body)
+	fmt.Println("HEREHRE")
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(result)
+	return result, nil
 }

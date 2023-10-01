@@ -23,6 +23,8 @@ func Build() {
 
 	db, err := database.ConnectAndCreateTable()
 
+	defer db.Close()
+
 	window := app.NewWindow("Haste")
 
 	shortcuts(&window)
@@ -37,26 +39,6 @@ func Build() {
 	responseUi := widget.NewLabel("Response")
 
 	jsonTmpData := cache.ReadCacheData()
-
-	rows, err := database.ReadData(db)
-
-	for rows.Next() {
-		var id int
-		var url string
-		var body string
-		var method string
-		var body_format string
-		var created_at string
-		var updated_at string
-
-		err = rows.Scan(&id, &url, &body, &method, &body_format, &created_at, &updated_at)
-
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		fmt.Println(id, url, body, method, body_format, created_at, updated_at)
-	}
 
 	bodyData, err := json.MarshalIndent(jsonTmpData, "", " ")
 	body.SetText(string(bodyData))
@@ -112,9 +94,42 @@ func Build() {
 	window.SetOnClosed(func() {
 		//cache.WriteToCache(body.Text)
 
-		data := &database.RequestData{Body_format: "JSON", Body: body.Text, Method: httpMethod.Selected, Url: url.Text}
+		data := &database.RequestData{Body_format: "JSON", Body: body.Text, Method: httpMethod.Selected, Url: "teste.com"}
 
-		database.InsertData(data, db)
+		rows, err := database.ReadData(db)
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		count := 0
+
+		var id int
+
+		for rows.Next() {
+			count++
+		}
+
+		if count > 0 {
+			fmt.Println(id)
+			res, err := database.UpdateData(id, data, db)
+
+			if err != nil {
+				fmt.Println("Error: ", err)
+				return
+			}
+			rowsAff, err := res.RowsAffected()
+
+			if err != nil {
+				fmt.Println("Error: ", err)
+				return
+			}
+
+			fmt.Println("Rows Affected: ", rowsAff)
+
+		}
+
 	})
 	window.ShowAndRun()
 }
