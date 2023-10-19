@@ -13,7 +13,6 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
-	"github.com/haste/cache"
 	"github.com/haste/database"
 )
 
@@ -30,7 +29,7 @@ func Build() {
 	shortcuts(&window)
 	window.SetMaster()
 
-	url := &widget.Entry{}
+	url_field := &widget.Entry{}
 	// TODO -> This needs to be text editor; I'll have to make my own
 	// text/code editor, or find a library that does it.
 
@@ -38,16 +37,40 @@ func Build() {
 
 	responseUi := widget.NewLabel("Response")
 
-	jsonTmpData := cache.ReadCacheData()
+	var jsonTmpData string
 
-	bodyData, err := json.MarshalIndent(jsonTmpData, "", " ")
-	body.SetText(string(bodyData))
+	rows, err := database.ReadDataById(1, db)
+
+	httpMethod := &widget.Select{Options: []string{"GET", "POST", "PUT"}}
+
+	for rows.Next() {
+		var id int
+		var url string
+		var method string
+		var body string
+		var body_format string
+		var created_at string
+		var updated_at string
+
+		err = rows.Scan(&id, &url, &method, &body, &body_format, &created_at, &updated_at)
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		httpMethod.SetSelected(method)
+
+		url_field.SetText(url)
+
+		jsonTmpData = body
+	}
+
+	body.SetText(string(jsonTmpData))
 
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	httpMethod := &widget.Select{Options: []string{"GET", "POST", "PUT"}}
 
 	button := widget.NewButton("Enter", func() {
 		fmt.Println("Click!")
@@ -56,7 +79,7 @@ func Build() {
 
 		reader := strings.NewReader(body.Text)
 
-		req, err := http.NewRequest(httpMethod.Selected, url.Text, reader)
+		req, err := http.NewRequest(httpMethod.Selected, url_field.Text, reader)
 
 		if err != nil {
 			fmt.Println(err)
@@ -79,7 +102,7 @@ func Build() {
 
 	button.Resize(fyne.NewSize(20, 30))
 
-	header := container.NewGridWithColumns(3, httpMethod, url, container.NewHBox(button))
+	header := container.NewGridWithColumns(3, httpMethod, url_field, container.NewHBox(button))
 
 	tab := container.NewTabItem("Body", body)
 

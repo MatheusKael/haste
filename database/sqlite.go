@@ -40,6 +40,18 @@ func InsertData(data *RequestData, db *sql.DB) error {
 	return nil
 }
 
+func ReadDataById(id int, db *sql.DB) (*sql.Rows, error) {
+
+	data, err := db.Query("SELECT * FROM user_request WHERE id = ?", id)
+
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	return data, nil
+}
+
 func ReadData(db *sql.DB) (*sql.Rows, error) {
 
 	rows, err := db.Query("SELECT * FROM user_request")
@@ -54,8 +66,9 @@ func ReadData(db *sql.DB) (*sql.Rows, error) {
 
 func UpdateData(id int, data *RequestData, db *sql.DB) (sql.Result, error) {
 	// TODO -> Just updating the first row, I need to update the row with the id passed as parameter.
+	// but for now I will just update the first row.
+
 	result, err := db.Exec("UPDATE user_request SET url = ?, method = ?, body = ?, updated_at = datetime('now') WHERE id = 1", &data.Url, &data.Method, &data.Body)
-	fmt.Println("HEREHRE")
 
 	if err != nil {
 		panic(err)
