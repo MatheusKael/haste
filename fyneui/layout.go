@@ -27,6 +27,9 @@ func Build() {
 	window := app.NewWindow("Haste")
 
 	shortcuts(&window)
+
+	window.SetMainMenu(makeMenu(app, window))
+
 	window.SetMaster()
 
 	url_field := &widget.Entry{}
@@ -95,7 +98,9 @@ func Build() {
 
 		var dst bytes.Buffer
 
-		json.Indent(&dst, body, "=", "\t")
+		fmt.Println(string(body))
+
+		json.Indent(&dst, body, "", "\t")
 
 		responseUi.SetText(dst.String())
 	})
@@ -167,4 +172,103 @@ func shortcuts(window *fyne.Window) {
 		w.Close()
 	})
 
+}
+func makeMenu(a fyne.App, w fyne.Window) *fyne.MainMenu {
+	newItem := fyne.NewMenuItem("New", nil)
+	checkedItem := fyne.NewMenuItem("Checked", nil)
+	checkedItem.Checked = true
+	disabledItem := fyne.NewMenuItem("Disabled", nil)
+	disabledItem.Disabled = true
+	otherItem := fyne.NewMenuItem("Other", nil)
+	mailItem := fyne.NewMenuItem("Mail", func() { fmt.Println("Menu New->Other->Mail") })
+	otherItem.ChildMenu = fyne.NewMenu("",
+		fyne.NewMenuItem("Project", func() { fmt.Println("Menu New->Other->Project") }),
+		mailItem,
+	)
+	fileItem := fyne.NewMenuItem("File", func() { fmt.Println("Menu New->File") })
+	dirItem := fyne.NewMenuItem("Directory", func() { fmt.Println("Menu New->Directory") })
+	newItem.ChildMenu = fyne.NewMenu("",
+		fileItem,
+		dirItem,
+		otherItem,
+	)
+
+	openSettings := func() {
+		w := a.NewWindow("Fyne Settings")
+		w.Resize(fyne.NewSize(480, 480))
+		w.Show()
+	}
+	settingsItem := fyne.NewMenuItem("Settings", openSettings)
+	settingsShortcut := &desktop.CustomShortcut{KeyName: fyne.KeyComma, Modifier: fyne.KeyModifierShortcutDefault}
+	settingsItem.Shortcut = settingsShortcut
+	w.Canvas().AddShortcut(settingsShortcut, func(shortcut fyne.Shortcut) {
+		openSettings()
+	})
+
+	performFind := func() { fmt.Println("Menu Find") }
+	findItem := fyne.NewMenuItem("Find", performFind)
+	findItem.Shortcut = &desktop.CustomShortcut{KeyName: fyne.KeyF, Modifier: fyne.KeyModifierShortcutDefault | fyne.KeyModifierAlt | fyne.KeyModifierShift | fyne.KeyModifierControl | fyne.KeyModifierSuper}
+	w.Canvas().AddShortcut(findItem.Shortcut, func(shortcut fyne.Shortcut) {
+		performFind()
+	})
+
+	// a quit item will be appended to our first (File) menu
+	file := fyne.NewMenu("File", newItem, checkedItem, disabledItem)
+	device := fyne.CurrentDevice()
+	if !device.IsMobile() && !device.IsBrowser() {
+		file.Items = append(file.Items, fyne.NewMenuItemSeparator(), settingsItem)
+	}
+	mainMenu := fyne.NewMainMenu(
+		file,
+		fyne.NewMenu("Edit", fyne.NewMenuItemSeparator(), findItem),
+	)
+	checkedItem.Action = func() {
+		checkedItem.Checked = !checkedItem.Checked
+		mainMenu.Refresh()
+	}
+	return mainMenu
+}
+
+func makeNav() fyne.CanvasObject {
+	a := fyne.CurrentApp()
+
+	tree := &widget.Tree{
+		ChildUIDs: func(uid string) []string {
+			return []string{"Children"}
+		},
+		IsBranch: func(uid string) bool {
+
+			return true
+		},
+		CreateNode: func(branch bool) fyne.CanvasObject {
+			return widget.NewLabel("Collection Widgets")
+		},
+		//		UpdateNode: func(uid string, branch bool, obj fyne.CanvasObject) {
+		//			t, ok := tutorials.Tutorials[uid]
+		//			if !ok {
+		//				fyne.LogError("Missing tutorial panel: "+uid, nil)
+		//				return
+		//			}
+		//			obj.(*widget.Label).SetText(t.Title)
+		//			if unsupportedTutorial(t) {
+		//				obj.(*widget.Label).TextStyle = fyne.TextStyle{Italic: true}
+		//			} else {
+		//				obj.(*widget.Label).TextStyle = fyne.TextStyle{}
+		//			}
+		//		},
+		OnSelected: func(uid string) {
+			fmt.Println("Selected: " + uid)
+		},
+	}
+
+	themes := container.NewGridWithColumns(2,
+		widget.NewButton("Dark", func() {
+			a.Settings().SetTheme(theme.DarkTheme())
+		}),
+		widget.NewButton("Light", func() {
+			a.Settings().SetTheme(theme.LightTheme())
+		}),
+	)
+
+	return container.NewBorder(nil, themes, nil, nil, tree)
 }
