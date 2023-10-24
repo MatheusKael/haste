@@ -12,6 +12,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/haste/database"
 )
@@ -111,11 +112,16 @@ func Build() {
 
 	tab := container.NewTabItem("Body", body)
 
-	appTabs := container.NewAppTabs(tab)
+	bodyTabs := container.NewAppTabs(tab)
 
-	border := container.NewBorder(header, nil, nil, nil, container.NewHSplit(appTabs, container.NewScroll(responseUi)))
+	responseTabs := container.NewAppTabs(container.NewTabItem("Preview", container.NewScroll(responseUi)))
 
-	window.SetContent(border)
+	border := container.NewBorder(header, nil, nil, nil, container.NewHSplit(bodyTabs, responseTabs))
+
+	content := container.NewHSplit(makeNav(), border)
+	content.Offset = 0.2
+
+	window.SetContent(content)
 
 	window.Resize(fyne.NewSize(1000, 600))
 

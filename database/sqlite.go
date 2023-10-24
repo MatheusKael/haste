@@ -74,6 +74,5 @@ func UpdateData(id int, data *RequestData, db *sql.DB) (sql.Result, error) {
 		panic(err)
 	}
 
-	fmt.Println(result)
 	return result, nil
 }
