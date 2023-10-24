@@ -120,9 +120,8 @@ func Build() {
 	window.Resize(fyne.NewSize(1000, 600))
 
 	window.SetOnClosed(func() {
-		//cache.WriteToCache(body.Text)
 
-		data := &database.RequestData{Body_format: "JSON", Body: body.Text, Method: httpMethod.Selected, Url: "teste.com"}
+		data := &database.RequestData{Body_format: "JSON", Body: body.Text, Method: httpMethod.Selected, Url: url_field.Text}
 
 		rows, err := database.ReadData(db)
 
